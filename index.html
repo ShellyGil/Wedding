@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>תכנון החתונה של אושר ושלי</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f9fafb; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tab-btn.active { border-bottom: 2px solid #3b82f6; color: #3b82f6; }
+    </style>
+</head>
+<body class="p-6">
+
+    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="p-8 text-center bg-blue-50">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">💍 תכנון החתונה של אושר ושלי</h1>
+            <p class="text-gray-600">כל מה שצריך כדי לארגן את האירוע, במקום אחד.</p>
+        </div>
+
+        <!-- תפריט ניווט -->
+        <div class="flex border-b text-center cursor-pointer bg-gray-50 text-gray-600 font-medium">
+            <div class="flex-1 py-3 tab-btn active" onclick="switchTab('tasks', this)">✅ צ'ק ליסט</div>
+            <div class="flex-1 py-3 tab-btn" onclick="switchTab('guests', this)">👥 מוזמנים</div>
+        </div>
+
+        <!-- עמוד צ'ק ליסט -->
+        <div id="tasks" class="tab-content active p-8">
+            <h2 class="text-2xl font-semibold mb-4">משימות לביצוע</h2>
+            <div class="flex gap-2 mb-6">
+                <input type="text" id="newTask" placeholder="הוסיפו משימה חדשה..." class="border p-2 rounded flex-1">
+                <button onclick="addTask()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">הוסף</button>
+            </div>
+            <ul id="taskList" class="space-y-3"></ul>
+        </div>
+
+        <!-- עמוד מוזמנים -->
+        <div id="guests" class="tab-content p-8">
+            <h2 class="text-2xl font-semibold mb-4">רשימת מוזמנים</h2>
+            <div class="flex gap-2 mb-6">
+                <input type="text" id="guestName" placeholder="שם האורח" class="border p-2 rounded flex-1">
+                <input type="number" id="guestCount" placeholder="כמות (למשל 2)" class="border p-2 rounded w-24">
+                <button onclick="addGuest()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">הוסף</button>
+            </div>
+            <div class="bg-gray-100 p-3 rounded mb-4 font-semibold">סה"כ מוזמנים: <span id="totalGuests">0</span></div>
+            <ul id="guestList" class="space-y-2"></ul>
+        </div>
+    </div>
+
+    <script>
+        // לוגיקת מעבר בין עמודים
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            element.classList.add('active');
+        }
+
+        // --- לוגיקת משימות ---
+        let tasks = JSON.parse(localStorage.getItem('weddingTasks')) || [
+            { text: "סגירת תאריך ואולם", done: false },
+            { text: "בחירת צלם", done: false }
+        ];
+
+        function renderTasks() {
+            const list = document.getElementById('taskList');
+            list.innerHTML = '';
+            tasks.forEach((task, index) => {
+                list.innerHTML += `
+                    <li class="flex items-center gap-3 bg-gray-50 p-3 rounded border">
+                        <input type="checkbox" class="w-5 h-5 cursor-pointer" ${task.done ? 'checked' : ''} 
+                               onchange="toggleTask(${index})">
+                        <span class="flex-1 ${task.done ? 'line-through text-gray-400' : ''}">${task.text}</span>
+                        <button onclick="deleteTask(${index})" class="text-red-500 font-bold">X</button>
+                    </li>`;
+            });
+            localStorage.setItem('weddingTasks', JSON.stringify(tasks));
+        }
+
+        function addTask() {
+            const input = document.getElementById('newTask');
+            if (input.value.trim() === '') return;
+            tasks.push({ text: input.value, done: false });
+            input.value = '';
+            renderTasks();
+        }
+
+        function toggleTask(index) {
+            tasks[index].done = !tasks[index].done;
+            renderTasks();
+        }
+
+        function deleteTask(index) {
+            tasks.splice(index, 1);
+            renderTasks();
+        }
+
+        // --- לוגיקת מוזמנים ---
+        let guests = JSON.parse(localStorage.getItem('weddingGuests')) || [];
+
+        function renderGuests() {
+            const list = document.getElementById('guestList');
+            let total = 0;
+            list.innerHTML = '';
+            guests.forEach((guest, index) => {
+                total += guest.count;
+                list.innerHTML += `
+                    <li class="flex justify-between items-center bg-gray-50 p-3 rounded border">
+                        <span class="font-medium">${guest.name}</span>
+                        <div class="flex items-center gap-4">
+                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">${guest.count} אורחים</span>
+                            <button onclick="deleteGuest(${index})" class="text-red-500 font-bold">X</button>
+                        </div>
+                    </li>`;
+            });
+            document.getElementById('totalGuests').innerText = total;
+            localStorage.setItem('weddingGuests', JSON.stringify(guests));
+        }
+
+        function addGuest() {
+            const nameInput = document.getElementById('guestName');
+            const countInput = document.getElementById('guestCount');
+            if (nameInput.value.trim() === '' || countInput.value === '') return;
+            
+            guests.push({ name: nameInput.value, count: parseInt(countInput.value) });
+            nameInput.value = '';
+            countInput.value = '';
+            renderGuests();
+        }
+
+        function deleteGuest(index) {
+            guests.splice(index, 1);
+            renderGuests();
+        }
+
+        // טעינה ראשונית
+        renderTasks();
+        renderGuests();
+    </script>
+</body>
+</html>
